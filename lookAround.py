@@ -11,9 +11,10 @@ tVisMax   = 5.0         # (s) maximum time to stay visible
 tVisTarget= 0.2         # (s) time that target stays visible
 tInvisMin = 1.0         # (s) minimum time to stay invisible
 tInvisMax = 5.0         # (s) maximum time to stay invisible
+tPostPointing = 1.0     # (s) waiting time after pointing out target
 frameRate = 60          # (Hz) make sure this matches the actual framerate
 targetProbability = 0.2 # chance that a new stimulus is a target
-targetWaitTime = 5.0    # (s) minimum time between onset of two targets
+tPostTarget = 5.0       # (s) minimum time between onset of two targets
 minDistance = 10        # (cm) minimum distance between object origins
 
 ## globals (more after window initialization)
@@ -27,6 +28,8 @@ times = np.empty([nStimuli, 2], dtype='int')
 shapes = np.empty([nStimuli], dtype='int') 
 # when is a new target allowed (frame number)
 targetAllowedTime = 0
+# when stimuli are shown again after a click (frame number)
+postPointingTime = 0
 
 ## function definitions
 def pickPosition():
@@ -63,7 +66,7 @@ def resetStimulus(i, frame=0, target=False, skipVisible=False):
 	# set visible time
 	if target:
 		times[i, 0] = int(tVisTarget*frameRate) + frame
-		targetAllowedTime = times[i, 1] + int(targetWaitTime*frameRate) 
+		targetAllowedTime = times[i, 1] + int(tPostTarget*frameRate) 
 		print("target at frame {:d} at position {:6.1f},{:6.1f}".format(frame, positions[i][0], positions[i][1]))
 	else:
 		times[i, 0] = int((np.random.random()*(tVisMax - tVisMin)+ tVisMin)*frameRate) + frame
@@ -115,9 +118,9 @@ mouse.clickReset()
 while not event.getKeys():
 	# set state of stimuli
 	for i, stimulus in enumerate(stimuli):
-		if(frame<times[i][0]):
+		if frame<times[i][0] and mState==0:
 			stimulus[shapes[i]].draw()
-		if(frame>=times[i][1]):
+		if frame>=times[i][1]:
 			target = np.random.random() < targetProbability and frame > targetAllowedTime
 			resetStimulus(i, frame, target)
 
@@ -137,7 +140,9 @@ while not event.getKeys():
 		elif mState==3:
 			mouse.setVisible(False)
 			mouse.clickReset()
-			mState = 0
-
+			postPointingTime = frame + int(tPostPointing*frameRate)
+			mState += 1
+	if mState==4 and frame >= postPointingTime:
+		mState = 0
 	win.flip()
 	frame += 1
