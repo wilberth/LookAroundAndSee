@@ -54,9 +54,6 @@ def resetStimulus(i, frame=0, target=False, skipVisible=False):
 		shapes[i] = targetShape
 	else:
 		shapes[i] = distractorShapes[np.random.randint(0, nShapes-1)]
-	# draw only this shape
-	for j in range(nShapes):
-		stimuli[i][j].autoDraw = j==shapes[i]
 
 	# reset own position
 	positions[i,:] = np.inf # necessary to prevent discarding due to self-overlap
@@ -118,10 +115,8 @@ mouse.clickReset()
 while not event.getKeys():
 	# set state of stimuli
 	for i, stimulus in enumerate(stimuli):
-		if(frame>=times[i][0]):
-			stimulus[shapes[i]].autoDraw = False
-		else:
-			pass
+		if(frame<times[i][0]):
+			stimulus[shapes[i]].draw()
 		if(frame>=times[i][1]):
 			target = np.random.random() < targetProbability and frame > targetAllowedTime
 			resetStimulus(i, frame, target)
